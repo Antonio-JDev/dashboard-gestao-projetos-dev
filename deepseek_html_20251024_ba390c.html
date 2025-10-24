@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard Kanban — S3E System PRO</title>
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    
+    /* Dark mode scrollbar */
+    .dark ::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: #475569;
+    }
+    .dark ::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+    
+    /* Card animations */
+    .task-card {
+      transition: all 0.2s ease;
+    }
+    .task-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Kanban column styling */
+    .kanban-column {
+      min-height: 400px;
+      transition: all 0.3s ease;
+    }
+    
+    /* Priority indicators */
+    .priority-high { border-left: 4px solid #ef4444; }
+    .priority-medium { border-left: 4px solid #f59e0b; }
+    .priority-low { border-left: 4px solid #10b981; }
+    
+    /* Progress bar animation */
+    .progress-bar {
+      transition: width 0.5s ease-in-out;
+    }
+    
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .kanban-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      .kanban-column {
+        min-height: 200px;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-300">
+  <div class="min-h-screen p-4 md:p-6">
+    <!-- Header -->
+    <header class="mb-6 md:mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="flex-1">
+        <h1 class="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white">S3E System PRO</h1>
+        <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">Painel de implementação - Acompanhe o progresso do desenvolvimento</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="toggleTheme" class="px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+          <span class="hidden md:inline">Alternar tema</span>
+        </button>
+        <button id="resetBtn" class="px-3 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-white shadow-sm flex items-center gap-2 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span class="hidden md:inline">Resetar</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Progress Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 md:mb-8">
+      <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+        <div class="flex items-center justify-between">
+          <h3 class="font-medium text-slate-600 dark:text-slate-300">Progresso Geral</h3>
+          <span class="text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">Backend</span>
+        </div>
+        <div class="mt-2">
+          <div class="flex items-center justify-between text-sm mb-1">
+            <span>85% completo</span>
+            <span class="font-medium">85%</span>
+          </div>
+          <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full progress-bar" style="width: 85%"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+        <div class="flex items-center justify-between">
+          <h3 class="font-medium text-slate-600 dark:text-slate-300">Tarefas Concluídas</h3>
+          <span class="text-xs font-medium px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">15/24</span>
+        </div>
+        <div class="mt-2">
+          <div class="flex items-center justify-between text-sm mb-1">
+            <span>62% das tarefas</span>
+            <span class="font-medium">62%</span>
+          </div>
+          <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+            <div class="bg-gradient-to-r from-emerald-500 to-teal-500 h-2 rounded-full progress-bar" style="width: 62%"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+        <div class="flex items-center justify-between">
+          <h3 class="font-medium text-slate-600 dark:text-slate-300">Próxima Entrega</h3>
+          <span class="text-xs font-medium px-2 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">Alta</span>
+        </div>
+        <div class="mt-2">
+          <div class="text-sm text-slate-500 dark:text-slate-400 mb-1">Módulo de Serviços</div>
+          <div class="flex items-center gap-2">
+            <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+              <div class="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full progress-bar" style="width: 45%"></div>
+            </div>
+            <span class="text-xs font-medium">45%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <!-- Left: Summaries & Charts -->
+      <section class="lg:col-span-1 bg-white dark:bg-slate-800 rounded-xl p-4 md:p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+        <h2 class="font-semibold text-lg mb-4 text-slate-800 dark:text-white">Resumo do Projeto</h2>
+        
+        <!-- Progress Summary -->
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-medium text-slate-700 dark:text-slate-300">Progresso por Módulo</h3>
+          </div>
+          <div id="summaryList" class="space-y-3"></div>
+        </div>
+        
+        <!-- Overall Progress Chart -->
+        <div class="mb-6">
+          <h3 class="font-medium text-slate-700 dark:text-slate-300 mb-3">Visão Geral</h3>
+          <div class="h-40 md:h-48">
+            <canvas id="overallChart"></canvas>
+          </div>
+        </div>
+        
+        <!-- Modules Progress Chart -->
+        <div>
+          <h3 class="font-medium text-slate-700 dark:text-slate-300 mb-3">Progresso por Módulo</h3>
+          <div class="h-48 md:h-56">
+            <canvas id="modulesChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Kanban -->
+      <section class="lg:col-span-3 bg-white dark:bg-slate-800 rounded-xl p-4 md:p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+          <h2 class="font-semibold text-lg text-slate-800 dark:text-white">Quadro Kanban</h2>
+          <div class="flex items-center gap-2 w-full md:w-auto">
+            <button id="newTaskBtn" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center gap-2 transition-colors flex-1 md:flex-none justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              <span>Nova Tarefa</span>
+            </button>
+            <select id="filterSelect" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm flex-1 md:flex-none">
+              <option value="all">Todos</option>
+              <option value="module">Por Módulo</option>
+              <option value="priority">Por Prioridade</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Kanban Board -->
+        <div id="kanban" class="kanban-container grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto pb-4">
+          <!-- Columns will be injected here -->
+        </div>
+      </section>
+    </main>
+
+    <!-- Modal: add/edit task -->
+    <div id="modal" class="fixed inset-0 hidden items-center justify-center bg-black/40 z-50 p-4">
+      <div class="bg-white dark:bg-slate-900 rounded-xl p-6 w-full max-w-lg shadow-xl">
+        <h3 id="modalTitle" class="text-lg font-semibold mb-4 text-slate-800 dark:text-white">Nova Tarefa</h3>
+        <form id="taskForm" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Título</label>
+            <input id="title" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" required />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Módulo</label>
+            <input id="module" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Ex: Gestão de Estoque" />
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Prioridade</label>
+              <select id="priority" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <option>Baixa</option>
+                <option selected>Média</option>
+                <option>Alta</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Progresso (%)</label>
+              <input id="progress" type="number" min="0" max="100" value="0" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Coluna</label>
+              <select id="colSelect" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="backlog">Backlog</option>
+                <option value="inprogress">Em andamento</option>
+                <option value="review">Revisão</option>
+                <option value="done">Concluído</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex items-center justify-end gap-3 pt-2">
+            <button type="button" id="cancelBtn" class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
+            <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Updated tasks based on backend endpoints needed ---
+    const SAMPLE_TASKS = [
+      // Existing completed tasks
+      { id: 't-auth', title: 'Autenticação (JWT, RBAC)', module: 'Autenticação', priority: 'Alta', progress: 100, col: 'done' },
+      { id: 't-fin', title: 'Sistema Financeiro (Relatórios)', module: 'Financeiro', priority: 'Alta', progress: 100, col: 'done' },
+      { id: 't-stock', title: 'Gestão de Estoque (Construtor de kits)', module: 'Estoque', priority: 'Média', progress: 95, col: 'inprogress' },
+      { id: 't-purchases', title: 'Compras (Importação XML)', module: 'Compras', priority: 'Média', progress: 90, col: 'inprogress' },
+      { id: 't-budgets', title: 'Orçamentos (Editor, PDF)', module: 'Orçamentos', priority: 'Média', progress: 85, col: 'review' },
+      { id: 't-projects', title: 'Projetos e Obras (Kanban base)', module: 'Projetos', priority: 'Média', progress: 80, col: 'inprogress' },
+      
+      // New backend endpoints - Serviços
+      { id: 't-serv-get', title: 'GET /api/servicos - Listar serviços', module: 'Serviços', priority: 'Alta', progress: 0, col: 'backlog' },
+      { id: 't-serv-post', title: 'POST /api/servicos - Criar serviço', module: 'Serviços', priority: 'Alta', progress: 0, col: 'backlog' },
+      { id: 't-serv-put', title: 'PUT /api/servicos/:id - Atualizar serviço', module: 'Serviços', priority: 'Alta', progress: 0, col: 'backlog' },
+      { id: 't-serv-del', title: 'DELETE /api/servicos/:id - Deletar serviço', module: 'Serviços', priority: 'Alta', progress: 0, col: 'backlog' },
+      
+      // Movimentações
+      { id: 't-mov-get', title: 'GET /api/movimentacoes - Listar movimentações', module: 'Movimentações', priority: 'Alta', progress: 0, col: 'backlog' },
+      { id: 't-mov-post', title: 'POST /api/movimentacoes - Criar movimentação', module: 'Movimentações', priority: 'Alta', progress: 0, col: 'backlog' },
+      { id: 't-mov-put', title: 'PUT /api/movimentacoes/:id - Atualizar movimentação', module: 'Movimentações', priority: 'Alta', progress: 0, col: 'backlog' },
+      { id: 't-mov-del', title: 'DELETE /api/movimentacoes/:id - Deletar movimentação', module: 'Movimentações', priority: 'Alta', progress: 0, col: 'backlog' },
+      
+      // Histórico
+      { id: 't-hist-get', title: 'GET /api/historico - Listar histórico', module: 'Histórico', priority: 'Média', progress: 0, col: 'backlog' },
+      { id: 't-hist-mod', title: 'GET /api/historico/:modulo - Histórico por módulo', module: 'Histórico', priority: 'Média', progress: 0, col: 'backlog' },
+      { id: 't-hist-post', title: 'POST /api/historico - Registrar ação', module: 'Histórico', priority: 'Média', progress: 0, col: 'backlog' },
+      
+      // NFe
+      { id: 't-nfe-get', title: 'GET /api/nfe - Listar notas fiscais', module: 'NFe', priority: 'Baixa', progress: 0, col: 'backlog' },
+      { id: 't-nfe-post', title: 'POST /api/nfe - Emitir nota fiscal', module: 'NFe', priority: 'Baixa', progress: 0, col: 'backlog' },
+      { id: 't-nfe-put', title: 'PUT /api/nfe/:id - Atualizar nota fiscal', module: 'NFe', priority: 'Baixa', progress: 0, col: 'backlog' },
+      { id: 't-nfe-del', title: 'DELETE /api/nfe/:id - Cancelar nota fiscal', module: 'NFe', priority: 'Baixa', progress: 0, col: 'backlog' },
+      { id: 't-nfe-val', title: 'POST /api/nfe/validar - Validar NFe', module: 'NFe', priority: 'Baixa', progress: 0, col: 'backlog' },
+      
+      // Empresas
+      { id: 't-emp-get', title: 'GET /api/empresas - Listar empresas', module: 'Empresas', priority: 'Média', progress: 0, col: 'backlog' },
+      { id: 't-emp-post', title: 'POST /api/empresas - Criar empresa', module: 'Empresas', priority: 'Média', progress: 0, col: 'backlog' },
+      { id: 't-emp-put', title: 'PUT /api/empresas/:id - Atualizar empresa', module: 'Empresas', priority: 'Média', progress: 0, col: 'backlog' },
+      { id: 't-emp-del', title: 'DELETE /api/empresas/:id - Deletar empresa', module: 'Empresas', priority: 'Média', progress: 0, col: 'backlog' },
+      
+      // Dashboard
+      { id: 't-dash-stats', title: 'GET /api/dashboard/estatisticas - Estatísticas', module: 'Dashboard', priority: 'Alta', progress: 0, col: 'backlog' },
+      { id: 't-dash-graph', title: 'GET /api/dashboard/graficos - Dados gráficos', module: 'Dashboard', priority: 'Alta', progress: 0, col: 'backlog' },
+      { id: 't-dash-alert', title: 'GET /api/dashboard/alertas - Alertas sistema', module: 'Dashboard', priority: 'Alta', progress: 0, col: 'backlog' },
+      
+      // Other existing tasks
+      { id: 't-integr', title: 'Integrações externas (NF-e, bancária)', module: 'Integrações', priority: 'Alta', progress: 20, col: 'backlog' },
+      { id: 't-adv', title: 'Funcionalidades avançadas (mobile, BI)', module: 'Avançado', priority: 'Alta', progress: 30, col: 'backlog' },
+      { id: 't-tests', title: 'Testes & qualidade', module: 'Qualidade', priority: 'Média', progress: 60, col: 'backlog' },
+      { id: 't-docs', title: 'Documentação técnica (Swagger, guias)', module: 'Documentação', priority: 'Baixa', progress: 50, col: 'backlog' }
+    ];
+
+    // Columns definitions
+    const COLUMNS = [
+      { id: 'backlog', title: 'Backlog', color: 'bg-slate-100 dark:bg-slate-800/50' },
+      { id: 'inprogress', title: 'Em andamento', color: 'bg-blue-50 dark:bg-blue-900/20' },
+      { id: 'review', title: 'Revisão', color: 'bg-amber-50 dark:bg-amber-900/20' },
+      { id: 'done', title: 'Concluído', color: 'bg-emerald-50 dark:bg-emerald-900/20' }
+    ];
+
+    // --- Utilities ---
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+    // Theme
+    const body = document.body;
+    const toggleTheme = $('#toggleTheme');
+    toggleTheme.addEventListener('click', () => {
+      body.classList.toggle('dark');
+      localStorage.setItem('s3e_theme_dark', body.classList.contains('dark'));
+    });
+    if (localStorage.getItem('s3e_theme_dark') === 'true') body.classList.add('dark');
+
+    // Storage key
+    const STORAGE_KEY = 's3e_kanban_tasks_v1';
+
+    // Load tasks
+    function loadTasks() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return SAMPLE_TASKS.slice();
+      try { return JSON.parse(raw); } catch(e) { return SAMPLE_TASKS.slice(); }
+    }
+    let tasks = loadTasks();
+
+    // Save tasks
+    function saveTasks() { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }
+
+    // Create column element
+    function createColumn(col) {
+      const container = document.createElement('div');
+      container.className = 'kanban-column bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 flex flex-col';
+      container.innerHTML = `
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold text-slate-700 dark:text-slate-300">${col.title}</h3>
+          <span class="text-xs font-medium px-2 py-1 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400">0</span>
+        </div>
+        <div class="column flex-1 space-y-3" data-col="${col.id}"></div>
+      `;
+      // Drag events
+      const dropArea = container.querySelector('.column');
+      dropArea.addEventListener('dragover', (e) => { 
+        e.preventDefault(); 
+        dropArea.classList.add('ring-2', 'ring-indigo-400', 'rounded-lg');
+      });
+      dropArea.addEventListener('dragleave', () => { 
+        dropArea.classList.remove('ring-2', 'ring-indigo-400', 'rounded-lg');
+      });
+      dropArea.addEventListener('drop', (e) => {
+        e.preventDefault(); 
+        dropArea.classList.remove('ring-2', 'ring-indigo-400', 'rounded-lg');
+        const id = e.dataTransfer.getData('text/plain');
+        moveTaskToColumn(id, col.id);
+      });
+      return container;
+    }
+
+    // Render kanban
+    const kanbanEl = $('#kanban');
+    function renderKanban() {
+      kanbanEl.innerHTML = '';
+      COLUMNS.forEach(col => {
+        const colEl = createColumn(col);
+        const countEl = colEl.querySelector('h3 + span');
+        const columnBody = colEl.querySelector('.column');
+        const colTasks = tasks.filter(t => t.col === col.id);
+        countEl.textContent = colTasks.length;
+        colTasks.forEach(t => columnBody.appendChild(createCard(t)));
+        kanbanEl.appendChild(colEl);
+      });
+    }
+
+    // Create a task card
+    function createCard(task) {
+      const card = document.createElement('div');
+      card.className = `task-card bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm border border-slate-200 dark:border-slate-700 cursor-grab ${getPriorityClass(task.priority)}`;
+      card.draggable = true;
+      card.id = task.id;
+      card.innerHTML = `
+        <div class="flex flex-col h-full">
+          <div class="flex items-start justify-between gap-2 mb-2">
+            <div class="flex-1">
+              <h4 class="font-medium text-slate-800 dark:text-white text-sm leading-tight">${escapeHtml(task.title)}</h4>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">${task.module}</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+              <button class="editBtn text-xs p-1 rounded text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button class="delBtn text-xs p-1 rounded text-rose-500 hover:text-rose-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="mt-auto">
+            <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-2">
+              <span>Prioridade: ${task.priority}</span>
+              <span class="font-medium">${task.progress}%</span>
+            </div>
+            <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+              <div style="width:${task.progress}%" class="h-2 rounded-full ${getProgressColor(task.progress)}"></div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Drag handlers
+      card.addEventListener('dragstart', (e) => {
+        card.classList.add('opacity-50', 'scale-95');
+        e.dataTransfer.setData('text/plain', task.id);
+        try { e.dataTransfer.setDragImage(card, 10, 10); } catch(e){}
+      });
+      card.addEventListener('dragend', () => card.classList.remove('opacity-50', 'scale-95'));
+
+      // Edit
+      card.querySelector('.editBtn').addEventListener('click', () => openModal(task.id));
+      // Delete
+      card.querySelector('.delBtn').addEventListener('click', () => { 
+        if (confirm('Excluir esta tarefa?')) { 
+          tasks = tasks.filter(t => t.id !== task.id); 
+          saveTasks(); 
+          rerenderAll(); 
+        } 
+      });
+
+      return card;
+    }
+
+    // Helper functions
+    function getPriorityClass(priority) {
+      switch(priority) {
+        case 'Alta': return 'priority-high';
+        case 'Média': return 'priority-medium';
+        case 'Baixa': return 'priority-low';
+        default: return '';
+      }
+    }
+    
+    function getProgressColor(progress) {
+      if (progress >= 90) return 'bg-gradient-to-r from-emerald-500 to-teal-500';
+      if (progress >= 70) return 'bg-gradient-to-r from-blue-500 to-indigo-500';
+      if (progress >= 50) return 'bg-gradient-to-r from-amber-500 to-orange-500';
+      return 'bg-gradient-to-r from-rose-500 to-pink-500';
+    }
+
+    // Move task
+    function moveTaskToColumn(id, colId) {
+      const t = tasks.find(x => x.id === id);
+      if (!t) return;
+      t.col = colId;
+      // if moved to done, set progress 100
+      if (colId === 'done') t.progress = 100;
+      saveTasks();
+      rerenderAll();
+    }
+
+    // Escape HTML
+    function escapeHtml(s){ 
+      const div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    // Modal logic
+    const modal = $('#modal');
+    const taskForm = $('#taskForm');
+    const newTaskBtn = $('#newTaskBtn');
+    const cancelBtn = $('#cancelBtn');
+    let editingId = null;
+
+    newTaskBtn.addEventListener('click', () => openModal());
+    cancelBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+    function openModal(id) {
+      editingId = id || null;
+      $('#modalTitle').textContent = id ? 'Editar tarefa' : 'Nova tarefa';
+      if (id) {
+        const t = tasks.find(x => x.id === id);
+        if (!t) return;
+        $('#title').value = t.title;
+        $('#module').value = t.module;
+        $('#priority').value = t.priority;
+        $('#progress').value = t.progress;
+        $('#colSelect').value = t.col;
+      } else {
+        taskForm.reset();
+        $('#progress').value = 0;
+        $('#colSelect').value = 'backlog';
+      }
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+    
+    function closeModal(){ 
+      modal.classList.add('hidden'); 
+      modal.classList.remove('flex'); 
+    }
+
+    taskForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const payload = {
+        title: $('#title').value.trim(),
+        module: $('#module').value.trim() || 'Geral',
+        priority: $('#priority').value,
+        progress: Math.max(0, Math.min(100, Number($('#progress').value || 0))),
+        col: $('#colSelect').value
+      };
+      if (editingId) {
+        const t = tasks.find(x => x.id === editingId);
+        Object.assign(t, payload);
+      } else {
+        payload.id = 't-' + Date.now().toString(36);
+        tasks.push(payload);
+      }
+      saveTasks();
+      closeModal();
+      rerenderAll();
+    });
+
+    // Reset storage
+    $('#resetBtn').addEventListener('click', () => { 
+      if (confirm('Restaurar tarefas de amostra? Isso irá substituir todas as suas alterações.')) { 
+        localStorage.removeItem(STORAGE_KEY); 
+        tasks = loadTasks(); 
+        rerenderAll(); 
+      } 
+    });
+
+    // Charts
+    let overallChart = null;
+    let modulesChart = null;
+
+    function computeSummary() {
+      // by module
+      const modules = {};
+      tasks.forEach(t => {
+        if (!modules[t.module]) modules[t.module] = { sum: 0, count: 0 };
+        modules[t.module].sum += (t.progress || 0);
+        modules[t.module].count += 1;
+      });
+      const list = Object.entries(modules).map(([k,v]) => ({ module: k, avg: Math.round(v.sum / v.count) }));
+      const overall = list.length ? Math.round(list.reduce((s,i)=>s+i.avg,0) / list.length) : 0;
+      return { modules: list.sort((a,b)=>b.avg-a.avg), overall };
+    }
+
+    function renderSummaryList() {
+      const container = $('#summaryList');
+      container.innerHTML = '';
+      const { modules, overall } = computeSummary();
+      
+      modules.slice(0, 5).forEach(m => {
+        const el = document.createElement('div');
+        el.className = 'flex items-center justify-between';
+        el.innerHTML = `
+          <span class="text-sm text-slate-600 dark:text-slate-400">${m.module}</span>
+          <div class="flex items-center gap-2">
+            <div class="w-16 bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+              <div class="h-2 rounded-full ${getProgressColor(m.avg)}" style="width:${m.avg}%"></div>
+            </div>
+            <span class="text-sm font-medium w-8 text-right">${m.avg}%</span>
+          </div>
+        `;
+        container.appendChild(el);
+      });
+    }
+
+    function renderOverallChart() {
+      const ctx = document.getElementById('overallChart');
+      const data = computeSummary();
+      const done = data.overall;
+      const todo = 100 - done;
+      if (overallChart) overallChart.destroy();
+      overallChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: { 
+          labels: ['Concluído','Faltando'], 
+          datasets:[{ 
+            data:[done,todo], 
+            backgroundColor: ['#10B981','#E5E7EB'],
+            borderWidth: 0
+          }] 
+        },
+        options: { 
+          cutout: '70%',
+          plugins:{ 
+            legend:{ 
+              display: false
+            }, 
+            tooltip:{ 
+              callbacks:{ 
+                label: (ctx)=> ctx.label + ': ' + ctx.parsed + '%' 
+              } 
+            } 
+          } 
+        }
+      });
+    }
+
+    function renderModulesChart() {
+      const ctx = document.getElementById('modulesChart');
+      const { modules } = computeSummary();
+      const labels = modules.map(m => m.module.length > 12 ? m.module.substring(0, 12) + '...' : m.module);
+      const data = modules.map(m => m.avg);
+      const backgroundColors = modules.map(m => {
+        if (m.avg >= 90) return '#10B981';
+        if (m.avg >= 70) return '#3B82F6';
+        if (m.avg >= 50) return '#F59E0B';
+        return '#EF4444';
+      });
+      
+      if (modulesChart) modulesChart.destroy();
+      modulesChart = new Chart(ctx, {
+        type: 'bar',
+        data: { 
+          labels, 
+          datasets: [{ 
+            label: 'Progresso (%)', 
+            data, 
+            backgroundColor: backgroundColors,
+            borderRadius: 4
+          }] 
+        },
+        options: { 
+          indexAxis: 'y', 
+          scales:{ 
+            x:{ 
+              max:100,
+              grid: {
+                color: 'rgba(148, 163, 184, 0.2)'
+              }
+            },
+            y: {
+              grid: {
+                display: false
+              }
+            }
+          }, 
+          plugins:{ 
+            legend:{ 
+              display:false 
+            } 
+          },
+          maintainAspectRatio: false
+        }
+      });
+    }
+
+    function rerenderAll() {
+      renderKanban();
+      renderSummaryList();
+      renderOverallChart();
+      renderModulesChart();
+    }
+
+    // Init
+    renderKanban();
+    renderSummaryList();
+    renderOverallChart();
+    renderModulesChart();
+
+    // Filter functionality
+    $('#filterSelect').addEventListener('change', (e) => {
+      if (e.target.value === 'module') {
+        const m = prompt('Digite o nome do módulo para filtrar (ex: Estoque)');
+        if (!m) { 
+          tasks = loadTasks(); 
+          rerenderAll(); 
+          return; 
+        }
+        // show only tasks whose module contains m
+        const filtered = tasks.filter(t => 
+          t.module.toLowerCase().includes(m.toLowerCase())
+        );
+        // temporary render filtered set
+        kanbanEl.innerHTML = '';
+        COLUMNS.forEach(col => {
+          const colEl = createColumn(col);
+          const columnBody = colEl.querySelector('.column');
+          const colTasks = filtered.filter(t => t.col === col.id);
+          colTasks.forEach(t => columnBody.appendChild(createCard(t)));
+          kanbanEl.appendChild(colEl);
+        });
+      } else if (e.target.value === 'priority') {
+        const p = prompt('Digite a prioridade (Alta, Média ou Baixa)');
+        if (!p) { 
+          tasks = loadTasks(); 
+          rerenderAll(); 
+          return; 
+        }
+        const filtered = tasks.filter(t => 
+          t.priority.toLowerCase().includes(p.toLowerCase())
+        );
+        kanbanEl.innerHTML = '';
+        COLUMNS.forEach(col => {
+          const colEl = createColumn(col);
+          const columnBody = colEl.querySelector('.column');
+          const colTasks = filtered.filter(t => t.col === col.id);
+          colTasks.forEach(t => columnBody.appendChild(createCard(t)));
+          kanbanEl.appendChild(colEl);
+        });
+      } else {
+        tasks = loadTasks(); 
+        rerenderAll();
+      }
+    });
+
+    // Keep charts responsive on resize
+    window.addEventListener('resize', () => { 
+      if (overallChart) overallChart.resize(); 
+      if (modulesChart) modulesChart.resize(); 
+    });
+  </script>
+</body>
+</html>
